@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Neon Chimpanzee</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        :root {
+            --neon-pink: #ff2a6d;
+            --neon-blue: #05d9e8;
+            --neon-purple: #d300c5;
+            --neon-green: #00ff9d;
+            --neon-yellow: #f9f002;
+            --dark-bg: #0d0221;
+            --darker-bg: #050110;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Orbitron', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--neon-blue);
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(5, 217, 232, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255, 42, 109, 0.1) 0%, transparent 20%);
+            touch-action: manipulation;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 350px;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+            margin-bottom: 10px;
+            font-size: 1.6rem;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: var(--neon-green);
+            text-shadow: 0 0 5px var(--neon-green);
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .timer-container {
+            width: 100%;
+            height: 20px;
+            background-color: rgba(5, 217, 232, 0.1);
+            border: 1px solid var(--neon-blue);
+            border-radius: 5px;
+            margin-bottom: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .timer-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-yellow));
+            transition: width 0.1s linear;
+        }
+
+        .timer-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            line-height: 20px;
+            pointer-events: none;
+        }
+
+        .game-area {
+            width: 100%;
+            height: 240px;
+            position: relative;
+            margin-bottom: 10px;
+            border: 2px solid var(--neon-purple);
+            box-shadow: 0 0 15px var(--neon-purple);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: rgba(13, 2, 33, 0.7);
+        }
+
+        .tile {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            pointer-events: auto;
+            /* Improved contrast for numbers on tiles */
+            color: #ffffff; /* Ensure high contrast for numbers */
+            text-shadow: 0 0 5px rgba(0,0,0,0.5); /* Add subtle shadow for better readability */
+        }
+
+        .tile.active {
+            transform: scale(1.2);
+            box-shadow: 0 0 20px currentColor, 0 0 40px currentColor; /* Enhanced glow */
+        }
+
+        .tile.hidden-number {
+            color: transparent !important;
+        }
+
+        .tile.disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 6px;
+            border: 1px solid var(--neon-purple);
+            border-radius: 5px;
+            background-color: rgba(211, 0, 197, 0.1);
+            font-size: 0.8rem;
+        }
+
+        .info-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .info-label {
+            color: var(--neon-yellow);
+            margin-bottom: 2px;
+            font-size: 0.7rem;
+            /* Ensure good contrast */
+            text-shadow: 0 0 3px rgba(249, 240, 2, 0.5);
+        }
+
+        .info-value {
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .message {
+            color: var(--neon-yellow);
+            text-align: center;
+            min-height: 18px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            text-shadow: 0 0 5px var(--neon-yellow);
+            padding: 0 8px;
+            /* Added for screen readers */
+            aria-live: polite;
+        }
+
+        .dashboard {
+            width: 100%;
+            height: 240px;
+            margin-bottom: 10px;
+            border: 1px solid var(--neon-blue);
+            border-radius: 8px;
+            padding: 8px;
+            background-color: rgba(5, 217, 232, 0.1);
+            display: none;
+            overflow-y: auto;
+        }
+
+        .dashboard-title {
+            color: var(--neon-blue);
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            text-shadow: 0 0 5px var(--neon-blue);
+        }
+
+        .high-scores {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .high-scores th {
+            color: var(--neon-pink);
+            padding: 4px;
+            text-align: left;
+            border-bottom: 1px solid var(--neon-pink);
+            font-size: 0.7rem;
+        }
+
+        .high-scores td {
+            padding: 4px;
+            border-bottom: 1px solid rgba(255, 42, 109, 0.3);
+        }
+
+        .high-scores tr:nth-child(even) {
+            background-color: rgba(255, 42, 109, 0.05);
+        }
+
+        .level-name {
+            color: var(--neon-green);
+            text-shadow: 0 0 5px var(--neon-green);
+            font-size: 0.7rem;
+            margin-top: 3px;
+        }
+
+        .game-over-button {
+            background-color: transparent;
+            color: var(--neon-pink);
+            border: 2px solid var(--neon-pink);
+            padding: 8px 16px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 8px var(--neon-pink);
+            -webkit-tap-highlight-color: transparent;
+            margin-top: 10px;
+            /* Ensure good contrast */
+            color: var(--neon-pink); /* Original color */
+        }
+
+        .game-over-button:hover {
+            background-color: var(--neon-pink);
+            color: var(--dark-bg);
+            box-shadow: 0 0 15px var(--neon-pink);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Neon Chimpanzee</h1>
+        <p class="subtitle">Can you match a chimpanzee's memory skills?</p>
+
+        <div class="game-info">
+            <div class="info-item">
+                <div class="info-label">Level</div>
+                <div class="info-value" id="levelDisplay">1</div>
+                <div class="level-name" id="levelName">Human</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Sequence</div>
+                <div class="info-value" id="sequenceDisplay">0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Score</div>
+                <div class="info-value" id="scoreDisplay">0</div>
+            </div>
+        </div>
+
+        <div class="timer-container">
+            <div class="timer-bar" id="timerBar"></div>
+            <div class="timer-text" id="timerText">30.0s</div>
+        </div>
+
+        <div class="message" id="message" aria-live="polite">Get ready to start...</div> <div class="game-area" id="gameArea"></div>
+        <div class="dashboard" id="dashboard">
+            <div class="dashboard-title">HIGH SCORES</div>
+            <table class="high-scores">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Name</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody id="highScoresTable">
+                    </tbody>
+            </table>
+            <button class="game-over-button" id="newGameBtn">New Game</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game elements
+            const gameArea = document.getElementById('gameArea');
+            const messageEl = document.getElementById('message');
+            const levelDisplay = document.getElementById('levelDisplay');
+            const levelNameEl = document.getElementById('levelName');
+            const sequenceDisplay = document.getElementById('sequenceDisplay');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const highScoresTable = document.getElementById('highScoresTable');
+            const dashboard = document.getElementById('dashboard');
+            const timerBar = document.getElementById('timerBar');
+            const timerText = document.getElementById('timerText');
+            const newGameBtn = document.getElementById('newGameBtn');
+
+            // Game state
+            let gameState = {
+                isPlaying: false,
+                currentLevel: 1,
+                currentSequence: [],
+                playerSequence: [],
+                score: 0,
+                tiles: [],
+                highScores: [], // Will be loaded from localStorage
+                timerInterval: null,
+                timeLeft: 30,
+                canClick: false,
+                showingSequence: false,
+                gameInitialized: false
+            };
+
+            // Store timeouts to clear them if needed
+            let gameTimeouts = [];
+
+            // Difficulty progression
+            const difficultySettings = [
+                {   // Level 1-3: Easy
+                    name: 'Human',
+                    displayTime: 2000,
+                    tiles: 4,
+                    scoreMultiplier: 1,
+                    timePerLevel: 30
+                },
+                {   // Level 4-6: Medium
+                    name: 'Smart',
+                    displayTime: 1500,
+                    tiles: 6,
+                    scoreMultiplier: 2,
+                    timePerLevel: 25
+                },
+                {   // Level 7-9: Hard
+                    name: 'Genius',
+                    displayTime: 1000,
+                    tiles: 9,
+                    scoreMultiplier: 3,
+                    timePerLevel: 20
+                },
+                {   // Level 10+: Chimp
+                    name: 'Chimp',
+                    displayTime: 650,
+                    tiles: 9,
+                    scoreMultiplier: 5,
+                    timePerLevel: 15
+                }
+            ];
+
+            // Initialize the game
+            initGame();
+
+            function initGame() {
+                if (gameState.gameInitialized) return;
+                gameState.gameInitialized = true;
+
+                // Load high scores from localStorage
+                loadHighScores();
+
+                // Set up new game button
+                newGameBtn.addEventListener('click', startNewGame);
+
+                // Auto-start the game after a short delay
+                const timeout = setTimeout(() => {
+                    startGame();
+                }, 2000);
+                gameTimeouts.push(timeout);
+            }
+
+            function clearAllTimeouts() {
+                gameTimeouts.forEach(timeout => clearTimeout(timeout));
+                gameTimeouts = [];
+
+                if (gameState.timerInterval) {
+                    clearInterval(gameState.timerInterval);
+                    gameState.timerInterval = null;
+                }
+            }
+
+            function startNewGame() {
+                clearAllTimeouts();
+                hideHighScores();
+                startGame();
+            }
+
+            function getCurrentDifficultySettings() {
+                if (gameState.currentLevel >= 10) return difficultySettings[3]; // Chimp
+                if (gameState.currentLevel >= 7) return difficultySettings[2]; // Hard
+                if (gameState.currentLevel >= 4) return difficultySettings[1]; // Medium
+                return difficultySettings[0]; // Easy
+            }
+
+            function createTiles(count) {
+                gameState.tiles = [];
+                gameArea.innerHTML = '';
+
+                const gameWidth = gameArea.clientWidth;
+                const gameHeight = gameArea.clientHeight;
+                const tileSize = 40;
+                const margin = 15;
+
+                // Ensure we have valid dimensions
+                if (gameWidth <= 0 || gameHeight <= 0) {
+                    // Use requestAnimationFrame for smoother retries if gameArea isn't ready
+                    requestAnimationFrame(() => createTiles(count));
+                    return;
+                }
+
+                // Generate positions for tiles
+                const positions = [];
+                const maxAttempts = 200;
+
+                for (let i = 0; i < count; i++) {
+                    let x, y;
+                    let overlapping;
+                    let attempts = 0;
+
+                    // Try to find a non-overlapping position
+                    do {
+                        overlapping = false;
+                        x = margin + Math.random() * (gameWidth - 2 * margin - tileSize);
+                        y = margin + Math.random() * (gameHeight - 2 * margin - tileSize);
+
+                        // Ensure position is within bounds
+                        x = Math.max(margin, Math.min(x, gameWidth - margin - tileSize));
+                        y = Math.max(margin, Math.min(y, gameHeight - margin - tileSize));
+
+                        // Check for overlap with existing positions
+                        for (const pos of positions) {
+                            const dx = pos.x - x;
+                            const dy = pos.y - y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            if (distance < tileSize + 10) { // Slightly increased minimum distance for clarity
+                                overlapping = true;
+                                break;
+                            }
+                        }
+
+                        attempts++;
+                        if (attempts >= maxAttempts) {
+                            // Force placement if we can't find a good spot, log a warning
+                            console.warn("Could not find ideal non-overlapping position for tile after many attempts.");
+                            overlapping = false; // Allow placement even if overlapping slightly
+                        }
+                    } while (overlapping);
+
+                    positions.push({ x, y });
+                }
+
+                // Create tile elements
+                for (let i = 0; i < count; i++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.textContent = (i + 1).toString();
+                    tile.style.left = `${positions[i].x}px`;
+                    tile.style.top = `${positions[i].y}px`;
+
+                    // Add tabindex for keyboard accessibility
+                    tile.tabIndex = 0;
+                    tile.setAttribute('role', 'button'); // Indicate it's a button for screen readers
+                    tile.setAttribute('aria-label', `Number ${i + 1}`);
+
+                    // Assign neon colors with solid backgrounds
+                    const colors = [
+                        { color: 'var(--neon-pink)', bg: 'rgba(255, 42, 109, 0.6)' },
+                        { color: 'var(--neon-blue)', bg: 'rgba(5, 217, 232, 0.6)' },
+                        { color: 'var(--neon-purple)', bg: 'rgba(211, 0, 197, 0.6)' },
+                        { color: 'var(--neon-green)', bg: 'rgba(0, 255, 157, 0.6)' },
+                        { color: 'var(--neon-yellow)', bg: 'rgba(249, 240, 2, 0.6)' }
+                    ];
+
+                    const colorInfo = colors[i % colors.length];
+                    // tile.style.color = 'white'; // Already set in CSS for better contrast
+                    tile.style.border = `2px solid ${colorInfo.color}`;
+                    tile.style.boxShadow = `0 0 12px ${colorInfo.color}`;
+                    tile.style.backgroundColor = colorInfo.bg;
+
+                    // Store tile data
+                    gameState.tiles.push({
+                        element: tile,
+                        number: i + 1,
+                        position: positions[i]
+                    });
+
+                    // Add click/touch handler
+                    tile.addEventListener('click', handleTileClick);
+                    tile.addEventListener('touchstart', handleTileClick, { passive: true });
+                    // Add keyboard handler for Enter/Space
+                    tile.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault(); // Prevent default scroll behavior for space bar
+                            handleTileClick(e);
+                        }
+                    });
+
+                    gameArea.appendChild(tile);
+                }
+            }
+
+            function startGame() {
+                // Clear any existing game state
+                clearAllTimeouts();
+
+                gameState.isPlaying = true;
+                gameState.currentLevel = 1;
+                gameState.score = 0;
+                gameState.currentSequence = [];
+                gameState.playerSequence = [];
+                gameState.canClick = false;
+                gameState.showingSequence = false;
+
+                // Get current difficulty settings
+                const difficulty = getCurrentDifficultySettings();
+                createTiles(difficulty.tiles);
+
+                updateDisplays();
+                messageEl.textContent = 'Get ready...';
+
+                // Start the first level after a short delay
+                const timeout = setTimeout(() => {
+                    if (gameState.isPlaying) {
+                        nextLevel();
+                    }
+                }, 1500);
+                gameTimeouts.push(timeout);
+            }
+
+            function resetTimer() {
+                if (gameState.timerInterval) {
+                    clearInterval(gameState.timerInterval);
+                    gameState.timerInterval = null;
+                }
+
+                const difficulty = getCurrentDifficultySettings();
+                gameState.timeLeft = difficulty.timePerLevel;
+                updateTimerDisplay();
+
+                // Start countdown
+                gameState.timerInterval = setInterval(() => {
+                    if (!gameState.isPlaying) {
+                        clearInterval(gameState.timerInterval);
+                        gameState.timerInterval = null;
+                        return;
+                    }
+
+                    gameState.timeLeft -= 0.1;
+                    updateTimerDisplay();
+
+                    if (gameState.timeLeft <= 0) {
+                        clearInterval(gameState.timerInterval);
+                        gameState.timerInterval = null;
+                        gameOver();
+                    }
+                }, 100);
+            }
+
+            function updateTimerDisplay() {
+                const difficulty = getCurrentDifficultySettings();
+                const percentage = Math.max(0, (gameState.timeLeft / difficulty.timePerLevel) * 100);
+                timerBar.style.width = `${percentage}%`;
+                timerText.textContent = `${Math.max(0, gameState.timeLeft).toFixed(1)}s`;
+
+                // Adjust color based on time remaining for better visual warning
+                if (gameState.timeLeft < 5) {
+                    timerBar.style.background = 'linear-gradient(90deg, #ff0000, #ff4444)'; /* Red for critical */
+                } else if (gameState.timeLeft < 10) {
+                    timerBar.style.background = 'linear-gradient(90deg, var(--neon-yellow), var(--neon-pink))'; /* Yellow-pink for warning */
+                } else {
+                    timerBar.style.background = 'linear-gradient(90deg, var(--neon-pink), var(--neon-yellow))'; /* Default gradient */
+                }
+            }
+
+            function nextLevel() {
+                if (!gameState.isPlaying) return;
+
+                gameState.playerSequence = [];
+                gameState.canClick = false;
+                gameState.showingSequence = true;
+
+                // Reset timer for new level
+                resetTimer();
+
+                // Generate new sequence for this level
+                gameState.currentSequence = [];
+                const sequenceLength = Math.min(gameState.currentLevel + 2, gameState.tiles.length);
+
+                // Create a random sequence of unique numbers
+                const availableNumbers = Array.from({length: gameState.tiles.length}, (_, i) => i + 1);
+                for (let i = 0; i < sequenceLength; i++) {
+                    const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+                    gameState.currentSequence.push(availableNumbers[randomIndex]);
+                    availableNumbers.splice(randomIndex, 1);
+                }
+
+                updateDisplays();
+                messageEl.textContent = `Level ${gameState.currentLevel} - Watch carefully!`;
+
+                // Disable all tiles during sequence display
+                gameState.tiles.forEach(tile => {
+                    tile.element.classList.add('disabled');
+                    tile.element.classList.remove('hidden-number');
+                    tile.element.tabIndex = -1; // Make non-focusable during sequence display
+                });
+
+                // Show the sequence to the player
+                const timeout = setTimeout(() => {
+                    if (gameState.isPlaying && gameState.showingSequence) {
+                        showSequence();
+                    }
+                }, 1000);
+                gameTimeouts.push(timeout);
+            }
+
+            function showSequence() {
+                if (!gameState.isPlaying || !gameState.showingSequence) return;
+
+                const difficulty = getCurrentDifficultySettings();
+                let index = 0;
+
+                function showNextNumber() {
+                    if (!gameState.isPlaying || !gameState.showingSequence) return;
+
+                    if (index >= gameState.currentSequence.length) {
+                        // Sequence complete, hide numbers and enable player input
+                        gameState.tiles.forEach(tile => {
+                            tile.element.classList.add('hidden-number');
+                            tile.element.classList.remove('disabled');
+                            tile.element.tabIndex = 0; // Make focusable for player input
+                        });
+
+                        gameState.canClick = true;
+                        gameState.showingSequence = false;
+                        messageEl.textContent = `Your turn! Click 1 to ${gameState.currentSequence.length} in order`;
+                        return;
+                    }
+
+                    const number = gameState.currentSequence[index];
+                    const tile = gameState.tiles.find(t => t.number === number);
+
+                    if (tile) {
+                        // Highlight the tile
+                        tile.element.classList.add('active');
+
+                        // Announce the number for accessibility during sequence display
+                        messageEl.textContent = `Number ${number}`;
+
+                        // Remove highlight after display time
+                        const timeout1 = setTimeout(() => {
+                            if (gameState.isPlaying) {
+                                tile.element.classList.remove('active');
+
+                                // Show next number after a short pause
+                                const timeout2 = setTimeout(() => {
+                                    if (gameState.isPlaying && gameState.showingSequence) {
+                                        showNextNumber();
+                                    }
+                                }, 300);
+                                gameTimeouts.push(timeout2);
+                            }
+                        }, difficulty.displayTime);
+                        gameTimeouts.push(timeout1);
+                    }
+
+                    index++;
+                }
+
+                // Start showing the sequence
+                showNextNumber();
+            }
+
+            function handleTileClick(e) {
+                if (!gameState.isPlaying || !gameState.canClick || gameState.showingSequence) {
+                    return;
+                }
+
+                e.preventDefault(); // Prevent default action for click/keydown
+                e.stopPropagation(); // Stop event propagation
+
+                const clickedTile = e.currentTarget; // Use currentTarget for event delegation
+                const clickedNumber = parseInt(clickedTile.textContent);
+
+                // Validate the clicked number
+                if (isNaN(clickedNumber) || clickedNumber < 1 || clickedNumber > gameState.tiles.length) {
+                    return;
+                }
+
+                // Check if this is the next expected number in sequence
+                const expectedNumber = gameState.playerSequence.length + 1;
+
+                if (clickedNumber === expectedNumber) {
+                    gameState.playerSequence.push(clickedNumber);
+
+                    // Temporarily show the number when clicked correctly
+                    clickedTile.classList.remove('hidden-number');
+                    clickedTile.classList.add('active');
+                    clickedTile.tabIndex = -1; // Make clicked tile non-focusable
+
+                    const timeout = setTimeout(() => {
+                        if (gameState.isPlaying) {
+                            clickedTile.classList.remove('active');
+                            // clickedTile.classList.add('hidden-number'); // Numbers remain visible once clicked correctly
+                        }
+                    }, 400);
+                    gameTimeouts.push(timeout);
+
+                    // Check if the sequence is complete
+                    if (gameState.playerSequence.length === gameState.currentSequence.length) {
+                        levelComplete();
+                    } else {
+                        const remaining = gameState.currentSequence.length - gameState.playerSequence.length;
+                        messageEl.textContent = `Good! ${remaining} more number${remaining > 1 ? 's' : ''} to go...`;
+                    }
+                } else {
+                    // Wrong number clicked - game over
+                    gameOver();
+                }
+            }
+
+            function levelComplete() {
+                if (!gameState.isPlaying) return;
+
+                const difficulty = getCurrentDifficultySettings();
+                gameState.score += gameState.currentSequence.length * difficulty.scoreMultiplier;
+                gameState.currentLevel++;
+                gameState.canClick = false;
+
+                updateDisplays();
+                messageEl.textContent = 'Perfect! Preparing next level...';
+
+                // Show all numbers briefly as a reward
+                gameState.tiles.forEach(tile => {
+                    tile.element.classList.remove('hidden-number');
+                    tile.element.classList.add('disabled');
+                    tile.element.tabIndex = -1; // Ensure non-focusable during transition
+                });
+
+                // Proceed to next level after a delay
+                const timeout = setTimeout(() => {
+                    if (gameState.isPlaying) {
+                        const newDifficulty = getCurrentDifficultySettings();
+                        if (newDifficulty.tiles !== gameState.tiles.length) {
+                            createTiles(newDifficulty.tiles);
+                        }
+                        nextLevel();
+                    }
+                }, 2000);
+                gameTimeouts.push(timeout);
+            }
+
+            function gameOver() {
+                clearAllTimeouts();
+
+                gameState.isPlaying = false;
+                gameState.canClick = false;
+                gameState.showingSequence = false;
+
+                if (gameState.timerInterval) {
+                    clearInterval(gameState.timerInterval);
+                    gameState.timerInterval = null;
+                }
+
+                // Show all numbers at game over
+                gameState.tiles.forEach(tile => {
+                    tile.element.classList.remove('hidden-number', 'disabled');
+                    tile.element.tabIndex = -1; // Make tiles non-focusable after game over
+                });
+
+                messageEl.textContent = `Game Over! Final Score: ${gameState.score}`;
+                updateDisplays();
+
+                // Handle high scores and next steps
+                if (gameState.score > 0) {
+                    if (isHighScore(gameState.score)) {
+                        let name = prompt('Congratulations! You made the high scores! Enter your name (max 10 chars):', 'Player');
+                        if (name !== null && name.trim() !== '') {
+                            addHighScore(name.substring(0, 10).trim(), gameState.score);
+                        }
+                    }
+
+                    // Show high scores after any score > 0
+                    const timeout = setTimeout(() => {
+                        showHighScores();
+                    }, 2000);
+                    gameTimeouts.push(timeout);
+                } else {
+                    // No score, restart automatically
+                    const timeout = setTimeout(() => {
+                        startGame();
+                    }, 3000);
+                    gameTimeouts.push(timeout);
+                }
+            }
+
+            function updateDisplays() {
+                const difficulty = getCurrentDifficultySettings();
+                levelDisplay.textContent = gameState.currentLevel;
+                levelNameEl.textContent = difficulty.name;
+                sequenceDisplay.textContent = gameState.currentSequence.length;
+                scoreDisplay.textContent = gameState.score;
+            }
+
+            function loadHighScores() {
+                try {
+                    const storedScores = localStorage.getItem('neonChimpHighScores');
+                    gameState.highScores = storedScores ? JSON.parse(storedScores) : [];
+                } catch (e) {
+                    console.error("Error loading high scores from localStorage:", e);
+                    gameState.highScores = []; // Fallback to empty if there's an issue
+                }
+                updateHighScoresTable();
+            }
+
+            function saveHighScores() {
+                try {
+                    localStorage.setItem('neonChimpHighScores', JSON.stringify(gameState.highScores));
+                } catch (e) {
+                    console.error("Error saving high scores to localStorage:", e);
+                }
+            }
+
+            function updateHighScoresTable() {
+                highScoresTable.innerHTML = '';
+
+                if (gameState.highScores.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="3" style="text-align: center; color: var(--neon-yellow);">No scores yet</td>`;
+                    highScoresTable.appendChild(row);
+                    return;
+                }
+
+                gameState.highScores.sort((a, b) => b.score - a.score).slice(0, 10).forEach((score, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${escapeHtml(score.name)}</td>
+                        <td>${score.score}</td>
+                    `;
+                    highScoresTable.appendChild(row);
+                });
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function isHighScore(score) {
+                // Check if there are less than 10 scores OR if the current score is higher than the lowest high score
+                return gameState.highScores.length < 10 ||
+                       (gameState.highScores.length > 0 && score > Math.min(...gameState.highScores.map(s => s.score)));
+            }
+
+            function addHighScore(name, score) {
+                if (!name || score <= 0) return;
+
+                gameState.highScores.push({ name: name || 'Player', score: score });
+                gameState.highScores.sort((a, b) => b.score - a.score);
+                gameState.highScores = gameState.highScores.slice(0, 10); // Keep only top 10
+                saveHighScores(); // Save to localStorage
+                updateHighScoresTable();
+            }
+
+            function showHighScores() {
+                gameArea.style.display = 'none';
+                dashboard.style.display = 'block';
+                newGameBtn.focus(); // Focus the new game button for keyboard users
+            }
+
+            function hideHighScores() {
+                gameArea.style.display = 'block';
+                dashboard.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
